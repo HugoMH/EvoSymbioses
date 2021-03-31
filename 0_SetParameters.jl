@@ -6,14 +6,14 @@
 # /DISQUE/FAC/Julia/julia-1.4.2-linux-x86_64/julia-1.4.2/bin/julia
 
 # Set working directory
-cd("/DISQUE/0_Grenoble/Biodiv_zoonoses/")
+cd("/DISQUE/0_Grenoble/Biodiv_zoonoses/EvoSymbioses/")
 # Set working directory
 include("./1_LoadPkgs_importFunctions.jl");
 
 #############################
 # Compilation setting
-PRINT = ""  # Debbuging (printing MANY information during the computions to help identifying the origin of an error)
-# PRINT = "#" # No debbuging
+# PRINT = ""  # Debbuging (printing MANY information during the computions to help identifying the origin of an error)
+PRINT = "#" # No debbuging
 
 # SIMD = "" # never use simd
 SIMD = "@simd" # use simd for some loops (very few)
