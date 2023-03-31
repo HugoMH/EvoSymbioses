@@ -515,9 +515,9 @@ if PhenotypicStochasticity
     const SymetricalProbilitiesGeomDistr_Host    = RecursiveArrayToTuple([GetSymetricalGeom(p,NallelesPerTrait)                for p in PhenRobustnessLevels])
 end
 
-for type in [Vector{Int},NTuple{Ntraits*2,Int_IDp}]
-    str = """
-        $INLINE function GetHostID(genotype::$type)
+for typeLoop in [Vector{Int},NTuple{Ntraits*2,Int_IDp}]
+    strLoop = """
+        $INLINE function GetHostID(genotype::$typeLoop)
         $FASTMATHstart
         $INBOUNDstart
 #         x = 0
@@ -532,12 +532,12 @@ for type in [Vector{Int},NTuple{Ntraits*2,Int_IDp}]
     $INBOUNDend
     $FASTMATHend
     end"""
-eval(Meta.parse(str));
+eval(Meta.parse(strLoop));
 end
 
-for type in [Vector{Int_IDp},NTuple{Ntraits,Int_IDp}]
-    str = """
-        $INLINE function GetParasitID(genotype::$type)
+for typeLoop in [Vector{Int_IDp},NTuple{Ntraits,Int_IDp}]
+    strLoop = """
+        $INLINE function GetParasitID(genotype::$typeLoop)
         $FASTMATHstart
         $INBOUNDstart
 #       x = 0
@@ -552,7 +552,7 @@ for type in [Vector{Int_IDp},NTuple{Ntraits,Int_IDp}]
         $INBOUNDend
         $FASTMATHend
         end"""
-    eval(Meta.parse(str));
+    eval(Meta.parse(strLoop));
 end
 
 # offspring will always be non immunised
@@ -2100,7 +2100,7 @@ p = map(k -> (1-p)^(k-1)*p , 1:(NallelesPerTrait-1))
 p=p/sum(p)
 
 for MUTATE in [false,true]
-    str = """
+    strLoop = """
     $(ifelse(MUTATE
     ,"function UpdateHostAllelesPool_and_Mutate!(X::MetaCommunity)"
     ,"function UpdateHostAllelesPool!(           X::MetaCommunity)"
@@ -2117,19 +2117,19 @@ for MUTATE in [false,true]
     $INBOUNDend
     $FASTMATHend
     end"""
-    eval(Meta.parse(str))
+    eval(Meta.parse(strLoop))
 end
 ####
 for MUTATE in [false,true]
-    type = MetaPop
-    str = """$INLINE $(ifelse(MUTATE
-    ,"function UpdateHostAllelesPool_and_Mutate__MetaPop!(X::$type,hostsGenotypeS_List::HostsGenotypeS_List, sp::Int)"
-    ,"function UpdateHostAllelesPool__MetaPop!(           X::$type,hostsGenotypeS_List::HostsGenotypeS_List         )"
+    typeLoop = MetaPop
+    strLoop = """$INLINE $(ifelse(MUTATE
+    ,"function UpdateHostAllelesPool_and_Mutate__MetaPop!(X::$typeLoop,hostsGenotypeS_List::HostsGenotypeS_List, sp::Int)"
+    ,"function UpdateHostAllelesPool__MetaPop!(           X::$typeLoop,hostsGenotypeS_List::HostsGenotypeS_List         )"
     ))
     $FASTMATHstart
     $INBOUNDstart
-        $PRINT println("UpdateHostAllelesPool_and_Mutate!", $type)
-        for x in getfield(X,:$(fieldname(type,1)))
+        $PRINT println("UpdateHostAllelesPool_and_Mutate!", $typeLoop)
+        for x in getfield(X,:$(fieldname(typeLoop,1)))
             if x.N[] > 0
                 $(ifelse(MUTATE
                 ,"UpdateHostAllelesPool_and_Mutate__HostSexS!(x, hostsGenotypeS_List, sp)"
@@ -2140,17 +2140,17 @@ for MUTATE in [false,true]
     $INBOUNDend
     $FASTMATHend
     end"""
-    eval(Meta.parse(str))
+    eval(Meta.parse(strLoop))
 end
 for MUTATE in [false,true]
-    type = HostSexS
-    str = """$INLINE $(ifelse(MUTATE
-    ,"function UpdateHostAllelesPool_and_Mutate__HostSexS!(X::$type,hostsGenotypeS_List::HostsGenotypeS_List, sp::Int)"
-    ,"function UpdateHostAllelesPool__HostSexS!(           X::$type,hostsGenotypeS_List::HostsGenotypeS_List         )"))
+    typeLoop = HostSexS
+    strLoop = """$INLINE $(ifelse(MUTATE
+    ,"function UpdateHostAllelesPool_and_Mutate__HostSexS!(X::$typeLoop,hostsGenotypeS_List::HostsGenotypeS_List, sp::Int)"
+    ,"function UpdateHostAllelesPool__HostSexS!(           X::$typeLoop,hostsGenotypeS_List::HostsGenotypeS_List         )"))
     $FASTMATHstart
     $INBOUNDstart
-        $PRINT println("UpdateHostAllelesPool_and_Mutate!", $type)
-        for x in getfield(X,:$(fieldname(type,1)))
+        $PRINT println("UpdateHostAllelesPool_and_Mutate!", $typeLoop)
+        for x in getfield(X,:$(fieldname(typeLoop,1)))
             $(ifelse(MUTATE
             ,"UpdateHostAllelesPool_and_Mutate__HostsGenotypeS!(x, hostsGenotypeS_List, Val(sp))"
             ,"UpdateHostAllelesPool__HostsGenotypeS!(           x, hostsGenotypeS_List         )"
@@ -2159,12 +2159,12 @@ for MUTATE in [false,true]
     $INBOUNDend
     $FASTMATHend
     end"""
-    eval(Meta.parse(str))
+    eval(Meta.parse(strLoop))
 end
 ####
 for MUTATE in [false,true]
     for sp in 1:NhostSp
-        str = """
+        strLoop = """
         $INLINE $(ifelse(MUTATE
         ,"function UpdateHostAllelesPool_and_Mutate__HostsGenotypeS!(X::HostsGenotypeS, hostsGenotypeS_List::HostsGenotypeS_List, sp::Val{$sp})"
         ,"function UpdateHostAllelesPool__HostsGenotypeS!(           X::HostsGenotypeS, hostsGenotypeS_List::HostsGenotypeS_List              )"
@@ -2176,12 +2176,14 @@ for MUTATE in [false,true]
                 $SIMD for trait in 1:$Ntraits
                     fill!(X.AllelesPool[trait],0.0) # for each trait for each allele number of individual with this allele
                 end
+                $PRINT println("X.N_ = ",X.N_)
                 resize!(X.Ngametes,length(X.N_))
                 $PRINT if GfG println("X.rate_of_gametes_prodS = ",X.rate_of_gametes_prodS) end
                 $(ifelse(GfG
-                ,"X.Ngametes .= rand.(Poisson.(X.N_ .* X.rate_of_gametes_prodS))"
-                ,"X.Ngametes .= rand.(Poisson.(X.N_ .* $Maxrate_of_gametes_prod))"
+                    ,"X.Ngametes .= rand.(Poisson.(X.N_ .* X.rate_of_gametes_prodS))"
+                    ,"X.Ngametes .= rand.(Poisson.(X.N_ .* $Maxrate_of_gametes_prod))"
                 ))
+                $PRINT println("X.Ngametes = ",X.Ngametes)
                 $SIMD for i in findall(X.Ngametes .!== 0)
                     genotype = hostsGenotypeS_List.GenotypeS[  X.posiInHostsGenotypeS_List[i]  ].Alleles
                     $SIMD for traitPosi in 2:2:$(Ntraits*2)
@@ -2318,7 +2320,7 @@ for MUTATE in [false,true]
             $INBOUNDend
             $FASTMATHend
             end"""
-        eval(Meta.parse(str))
+        eval(Meta.parse(strLoop))
     end
 end
 ####
@@ -2445,11 +2447,11 @@ end"""
 eval(Meta.parse(str))
 
 str = """
-$INLINE function Die_HostsGenotypeS!(X::HostsGenotypeS, density_dependence::Float, NinPop::Int, sex::Int, dt::Float)
+$INLINE function Die_HostsGenotypeS!(X::HostsGenotypeS, density_dependence::Float, NindPop::Int, sex::Int, dt::Float)
     $FASTMATHstart
     $INBOUNDstart
     $PRINT println("Die! ",typeof(X))
-    p = min.(((X.virulenceS .+ ($d0 + density_dependence × NinPop)).*dt),1.0) # for each category, for each individual, probability to die  (d0+D×N+virulence)×dt
+    p = min.(((X.virulenceS .+ ($d0 + density_dependence × NindPop)).*dt),1.0) # for each category, for each individual, probability to die  (d0+D×N+virulence)×dt
     $PRINT println("p ",p)
     $PRINT println("X.N_ =",X.N_)
     Ndead_ = rand.(Binomial.(X.N_,p))
@@ -2529,7 +2531,7 @@ function GetAllComb_GetPinfection_pdfBinomialPart(N::Int,P::Vector{Float16})
     return( ParasitFreq_x_Pinfection1contact__p, P_SameVirulence, P_HigherVirulence )
 end
 
-temp = load("/DISQUE/0_Grenoble/Biodiv_zoonoses/p_Float16_.jld")
+temp = load("./p_Float16_.jld")
 ParasitFreq_x_Pinfection1contact__p_Float16_ = temp["ParasitFreq_x_Pinfection1contact__p_Float16_"] ;
 P_SameVirulence_Float16_ = temp["P_SameVirulence_Float16_"] ;
 P_HigherVirulence_Float16_ = temp["P_HigherVirulence_Float16_"] ;
@@ -2640,7 +2642,7 @@ end"""
 eval(Meta.parse(str))
 
 for HostShift in [true,false]
-    str = """
+    strLoop = """
     $NOINLINE $(ifelse(HostShift
         ,"function InfectHostsShift_HostSexS!(X::HostSexS, HPinteractions::HPinteractions, hostsGenotypeS_List::HostsGenotypeS_List, $(ifelse(SimulateImmunisation,"parasitesGenotypeS_List::ParasitesGenotypeS_List, ",""))parasitesPop::ParasitesPop, Nd::Int, Kd::Float, spRecipient::Int, spDonor::Int, Time::Float, dt::Float)"
         ,"function InfectHosts_HostSexS!(     X::HostSexS, HPinteractions::HPinteractions, hostsGenotypeS_List::HostsGenotypeS_List, $(ifelse(SimulateImmunisation,"parasitesGenotypeS_List::ParasitesGenotypeS_List, ",""))parasitesPop::ParasitesPop,                                                                  dt::Float)"  ))
@@ -2832,7 +2834,7 @@ for HostShift in [true,false]
         $INBOUNDend
         $FASTMATHend
     end"""
-    eval(Meta.parse(str))
+    eval(Meta.parse(strLoop))
 end
 
 str="""
@@ -3250,7 +3252,45 @@ str= """
 function GetFreq_trait_H(X::MetaCommunity, pop::Int, sp::Int, allele::Int, trait::Int)
     $FASTMATHstart
     $INBOUNDstart
-    (X.MetaPopS[sp].PopS[pop].HostSexS[1].AllelesPool[trait][allele$addOneIfGfG_str] * X.MetaPopS[sp].PopS[pop].HostSexS[1].N[]  +  X.MetaPopS[sp].PopS[pop].HostSexS[2].AllelesPool[trait][allele$addOneIfGfG_str] * X.MetaPopS[sp].PopS[pop].HostSexS[2].N[]) / X.MetaPopS[sp].PopS[pop].N[]
+    # (X.MetaPopS[sp].PopS[pop].HostSexS[1].AllelesPool[trait][allele$addOneIfGfG_str] * X.MetaPopS[sp].PopS[pop].HostSexS[1].N[]  +  X.MetaPopS[sp].PopS[pop].HostSexS[2].AllelesPool[trait][allele$addOneIfGfG_str] * X.MetaPopS[sp].PopS[pop].HostSexS[2].N[]) / X.MetaPopS[sp].PopS[pop].N[]
+    # problem witht the strategy above is that AllelesPool is a random sample of the genotypes
+    
+    
+    
+    # nallele = 0
+    # for sex in 1:2
+    #         for posiOnChr in 0:1
+    #                 for posi in unique(X.MetaPopS[sp].PopS[pop].HostSexS[sex].posiInHostsGenotypeS_List)
+    #                         
+    #                 end
+    #                 
+    #                 
+    #             nallele += 
+    #             sum( 
+    #                 X.MetaPopS[sp].PopS[pop].HostSexS[sex].N_[
+    #                     [X.hostsGenotypeS_List.GenotypeS[posi].Alleles[trait*2-posiOnChr]
+    #             for posi in X.MetaPopS[sp].PopS[pop].HostSexS[sex].posiInHostsGenotypeS_List] .== allele ]
+    #         )
+    #         end
+    # end
+            
+    nallele = 0
+    for sex in 1:2
+        for posiOnChr in 0:1
+            for posi in unique(X.MetaPopS[sp].PopS[pop].HostSexS[sex].posiInHostsGenotypeS_List)
+                if X.hostsGenotypeS_List.GenotypeS[posi].Alleles[trait*2-posiOnChr] == allele
+                    nallele += 
+                        sum(
+                            X.MetaPopS[sp].PopS[pop].HostSexS[sex].N_[
+                                X.MetaPopS[sp].PopS[pop].HostSexS[sex].posiInHostsGenotypeS_List .== posi
+                                ])
+                end
+            end
+        end
+    end
+            
+    return(nallele / (X.MetaPopS[sp].PopS[pop].N[]*2)) # 2 chromosomes
+    
     $INBOUNDend
     $FASTMATHend
 end"""
@@ -3260,7 +3300,7 @@ str= """
 function GetFreq_trait_P(X::MetaCommunity, pop::Int, sp::Int, allele::Int, trait::Int)
     $FASTMATHstart
     $INBOUNDstart
-    sum(X.MetaPopS[sp].PopS[pop].ParasitesPop.N_[[X.parasitesGenotypeS_List.GenotypeS[posi].Alleles[trait] for posi in X.MetaPopS[sp].PopS[pop].ParasitesPop.posiInParasitGenotypeS_List] .== allele]) ./ X.MetaPopS[sp].PopS[pop].ParasitesPop.N[]
+    sum(X.MetaPopS[sp].PopS[pop].ParasitesPop.N_[[X.parasitesGenotypeS_List.GenotypeS[posi].Alleles[trait] for posi in X.MetaPopS[sp].PopS[pop].ParasitesPop.posiInParasitGenotypeS_List] .== allele]) / X.MetaPopS[sp].PopS[pop].ParasitesPop.N[]
     $INBOUNDend
     $FASTMATHend
 end"""
@@ -3344,7 +3384,7 @@ eval(Meta.parse(str))
 
 for Dt in [1,2]
     for ParasitesMustNotDisapear in [ [Nothing], [Nothing,Vector{NTuple{2,Int}}] ][ Dt ]
-        str = """
+        strLoop = """
         function CheckIfStop__apply_dN__RecordState!(X::MetaCommunity $(["",", dt::Float, RecordEvery::Float, SpPop_WhereParasitesMustNotDisapear::$ParasitesMustNotDisapear"][Dt]))
             $FASTMATHstart
             $INBOUNDstart
@@ -3470,7 +3510,7 @@ for Dt in [1,2]
             $INBOUNDend
             $FASTMATHend
         end"""
-        eval(Meta.parse(str))
+        eval(Meta.parse(strLoop))
     end
 end
 
@@ -3692,7 +3732,7 @@ end
 
 # Demography
 str = """
-function Plot_Demography(X::MetaCommunity;Time::UnitRange{Int64}=1:1, ylog::Bool)
+function Plot_Demography(X::MetaCommunity;Time::UnitRange{Int64}=1:1, ylog::Bool,scaleX::Float=1.0,scaleY::Float=1.0)
     if Time === 1:1 Time = X.Storage.Recorded.Time[1]:X.Storage.Recorded.Time[end] end
     W = (X.Storage.Recorded.Time .>= Time[1]) .& (X.Storage.Recorded.Time .<= Time[end])
     plotS = []
@@ -3707,9 +3747,9 @@ function Plot_Demography(X::MetaCommunity;Time::UnitRange{Int64}=1:1, ylog::Bool
         end
     end
     if ylog
-        plot(plotS..., layout = Plots.GridLayout($NhostSp, $NPops),yaxis=:log ,size = ($NPops, $NhostSp).*400)
+        plot(plotS..., layout = Plots.GridLayout($NhostSp, $NPops),yaxis=:log ,size = ($NPops*scaleX, $NhostSp*scaleY).*400)
     else
-        plot(plotS..., layout = Plots.GridLayout($NhostSp, $NPops),yaxis=:none,size = ($NPops, $NhostSp).*400)
+        plot(plotS..., layout = Plots.GridLayout($NhostSp, $NPops),yaxis=:none,size = ($NPops*scaleX, $NhostSp*scaleY).*400)
     end
 end"""
 eval(Meta.parse(str))
@@ -3746,7 +3786,7 @@ eval(Meta.parse(str))
 
 # Evolution Freq alleles traits_infection_success
 str = """
-function Plot_traits_infection_success_FREQ_ALLELES(X::MetaCommunity;Time::UnitRange{Int64}=1:1,trait::Int=1)
+function Plot_traits_infection_success_FREQ_ALLELES(X::MetaCommunity;Time::UnitRange{Int64}=1:1,trait::Int=1,scaleX::Float=1.0,scaleY::Float=1.0)
     if Time === 1:1 Time = X.Storage.Recorded.Time[1]:X.Storage.Recorded.Time[end] end
     W = (X.Storage.Recorded.Time .>= Time[1]) .& (X.Storage.Recorded.Time .<= Time[end])
     Xaxis = X.Storage.Recorded.Time[W]
@@ -3797,13 +3837,13 @@ function Plot_traits_infection_success_FREQ_ALLELES(X::MetaCommunity;Time::UnitR
             end
         end
     end
-    plot(plotS..., layout = Plots.GridLayout($NhostSp, $NPops*2),yaxis=:none,size = ($(NPops*NhostSp), 1).*400, legend = false)
+    plot(plotS..., layout = Plots.GridLayout($NPops*2, $NhostSp),yaxis=:none,size = ($(NPops*NhostSp)*scaleX, 1*scaleY).*400, legend = false)
 end"""
 eval(Meta.parse(str))
 
 # Evolution Freq alleles traits_immunity
 str = """
-function Plot_traits_immunity_FREQ_ALLELES(X::MetaCommunity;Time::UnitRange{Int64}=1:1,trait::Int=1)
+function Plot_traits_immunity_FREQ_ALLELES(X::MetaCommunity;Time::UnitRange{Int64}=1:1,trait::Int=1,scaleX::Float=1.0,scaleY::Float=1.0)
     if Time == 1:1 Time = X.Storage.Recorded.Time[1]:X.Storage.Recorded.Time[end] end
     W = (X.Storage.Recorded.Time .>= Time[1]) .& (X.Storage.Recorded.Time .<= Time[end])
     Xaxis = X.Storage.Recorded.Time[W]
@@ -3854,7 +3894,7 @@ function Plot_traits_immunity_FREQ_ALLELES(X::MetaCommunity;Time::UnitRange{Int6
             end
         end
     end
-    plot(plotS..., layout = Plots.GridLayout($NhostSp, $NPops*2),yaxis=:none,size = ($(NPops*NhostSp), 2).*400, legend = false)
+    plot(plotS..., layout = Plots.GridLayout($NPops*2, $NhostSp),yaxis=:none,size = ($(NPops*NhostSp)*scaleX, 2*scaleY).*400, legend = false)
 end"""
 eval(Meta.parse(str))
 
@@ -4089,7 +4129,7 @@ end"""
 eval(Meta.parse(str))
 # Evolution N_traits_immunity SD
 str = """
-function Plot_traits_immunity_SD(X::MetaCommunity;Time::UnitRange{Int64}=1:1)
+function Plot_traits_immunity_SD(X::MetaCommunity;Time::UnitRange{Int64}=1:1,scaleX::Float,scaleY::Float)
     if Time == 1:1 Time = X.Storage.Recorded.Time[1]:X.Storage.Recorded.Time[end] end
     W = (X.Storage.Recorded.Time .>= Time[1]) .& (X.Storage.Recorded.Time .<= Time[end])
     plotS = []
@@ -4108,6 +4148,6 @@ function Plot_traits_immunity_SD(X::MetaCommunity;Time::UnitRange{Int64}=1:1)
             end
         end
     end
-    plot(plotS..., layout = Plots.GridLayout($NhostSp, $NPops),yaxis=:none,ylim=Yrange,size = ($NPops, $NhostSp).*400)
+    plot(plotS..., layout = Plots.GridLayout($NhostSp, $NPops),yaxis=:none,ylim=Yrange,size = ($NPops*scaleX, $NhostSp*scaleY).*400)
 end"""
 eval(Meta.parse(str))

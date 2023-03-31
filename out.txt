@@ -1,0 +1,2 @@
+Hosts1He_immunity_pop1	Hosts1He_infection_success_pop1	Parasites_in_H1_He_immunity_pop1	Parasites_in_H1_He_infection_success_pop1
+0.7503648696711034	0.7461808117525077	0.3992086630570595	0.4495002082465639

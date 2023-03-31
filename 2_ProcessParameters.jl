@@ -137,6 +137,11 @@ tuple(deepcopy(hostsGenotypes_pop_sp[sp][pop]),deepcopy(hostsGenotypes_pop_sp[sp
 ) for pop in 1:NPops
 ] for sp in 1:NhostSp
 ]##########################
+
+if length(MigrRate) != NhostSp
+    error("length of MigrRate must be the same as NhostSp")
+end
+
 metaPop = [MetaPop(
 [deepcopy(hostSexS_pop_sp[sp][pop])    for pop in 1:NPops] # PopS
 ,[pop                                   for pop in 1:NPops] # IDpopS

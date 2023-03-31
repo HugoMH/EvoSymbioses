@@ -1,7 +1,12 @@
-# To test with this modele
+# To validate this model
+# Red queen dynamique :
+# 	- Effet de la taille de la pop
+# 	- Effet contradictoire sur le polymorphisme (effet seuil de la taille de la pop, en grande taille la taille de pop augmente; en petite taille, elle diminue)
+# 	- Effet des interactions GfG, MA et leurs inverses
+# 	  Géographie (mosaic theory of coevolution : augmente la divergence entre pop - traveaux de Sylvain Gandon)
+# To test with this model
 # - Effect of population size with continous matching alleles modèle
 # - Effect of population size depending on sociality
-
 
 # /DISQUE/FAC/Julia/julia-1.4.2-linux-x86_64/julia-1.4.2/bin/julia
 
@@ -38,9 +43,9 @@ const NhostSp = 1
 const NPops = 1
 
 # Host population dynamics
-const b0 = 1   # basal birth (the probability to have an offspring during one time step is  b0/2)
-const d0 = 0.1 # death rates
-const K = [[Int(5e5) for pop in 1:NPops] for sp in 1:NhostSp] # carrying capacity [for each species, one value per population]
+const b0 = 5   # basal birth (the probability to have an offspring during one time step is  b0 * 2)
+const d0 = 0.05 # death rates
+const K = [[Int(1e2) for pop in 1:NPops] for sp in 1:NhostSp] # carrying capacity [for each species, one value per population]
 # const K = [[Int(5e3), Int(0)] ,   [Int(1e3), Int(1e3)]] # carrying capacity [for each species, one value per population]
 # K[1][1] *= 5
 # K[2][1] *= 2
@@ -55,19 +60,19 @@ const N1 = [rand.(Poisson.(Int.(round.(K_./2 .* (  PrevalenceIni))))) for K_ in 
 
 ##  Transmission
 const Ht = fill(50.0,NhostSp) # One value per host species. The average number of contacts between the parasites of one infected host and some other hosts when N=K
-const HtCrossSp = 0.0000 # The average number of contacts a host individual of the species SP_r (r for recipient) undergoes with the species SP_d (d for donor) when for both species N=K or whatever the values of N if 〖Sp〗_interact=1
+const HtCrossSp = 0.0 # The average number of contacts a host individual of the species SP_r (r for recipient) undergoes with the species SP_d (d for donor) when for both species N=K or whatever the values of N if 〖Sp〗_interact=1
 const SpInteract = 0.5 # The proportion of contact induced by interspecies interactions that are independent of the species densities.
-const Sociality = fill(0.5,NhostSp) # One value per host species. The proportion of these contacts that are independant of the host density (i.e. induced by social interactions)
+const Sociality = fill(0.75,NhostSp) # One value per host species. The proportion of these contacts that are independant of the host density (i.e. induced by social interactions)
 const N_traits_infection_success = 1 # Number of trait which matching between the host and the parasites will determin P(infection|1 contact) noted Pinfection1contact
 
 const Tol_infection = -10.0 # Shape of the relationship between Pinfection1contact and the distance between the host and parasit for the traits_infection_success
-const Max_Pinfection1contact = 0.95
+const Max_Pinfection1contact = 1.0
 # const Min_Pinfection1contact = 0.0 by construction, it is set to zero.
 
 ##  Virulence
 const Tol_virul = -500.0 # Shape of the relationship between Pinfection1contact and the virulence (the increase in the probability of death because of the infection)
-const Max_virul = 5.0 # [1,Inf] Maximal virulence (this will be added to the death rate)
-const Min_virul = 5.0 # [1,Inf] Minimal virulence (this will be added to the death rate)
+const Max_virul = 0.1 # [0,1] Maximal virulence (this will be added to the death rate, the probability to die)
+const Min_virul = 0.1 # [0,1] Minimal virulence (this will be added to the death rate, the probability to die)
 
 ## Host recovery
 # Innate immunity
@@ -75,12 +80,13 @@ const N_traits_immunity = 1 # Number of trait which
 # i)  matching between the host and the parasites will determine the probability to recover thank to innate immune system P(innate immu.->recovery) noted P_recovery_innate_immu
 # ii) matching between the parasites genotypes Pg and Ph will determine the probability to recover thank to cross immuniny P(recovery_Pg|acquired immu._Ph) which will be stored in the tuple of tuples P_recovery_acquired_immu
 const Tol_InnateImmu = -10.0 # Shape of the relationship between P_recovery_innate_immu and the minimum of the distances between the host and parasit for the traits_immunity
-const Max_Precovery_innate_immu = 0.8
+const Max_Precovery_innate_immu = 0.95
 
 # Adaptive immune system and Cross-immunity
 const SimulateImmunisation = true # Should the Adaptive immunity be simulated ?
 const Tol_CrossImmun = 0.0 # Shape of the relationship between P(recovery_Pg|acquired immu._Ph) and the distance between the parasites genotypes Pg and Ph for the traits_immunity
-const Max_Precovery_acquiered_immu = 0.8
+const Max_Precovery_acquiered_immu = 0.25
+
 ### Evolution
 const Maxrate_of_gametes_prod = 1.0       # Expected number of gamètes   produced during one time step by one host              which fitness                    is maximal. If GfG is false, then fitness is always maximal.
 const MaxRate_of_parasites_emission = 1.0 # Expected number of parasites produced during one time step by one infected host for which the fitness of the parasit is maximal. If GfG is false, then fitness is always maximal.
@@ -99,15 +105,15 @@ if GfG
 end
 
 ## Evolution
-const NallelesPerTrait = 2
+const NallelesPerTrait = 6
 const DistBetweenHostSp = 0 # number of alleles that separate each host species for the traits_infection_success
 const PhenotypicStochasticity = false # Do we want to modèle PhenotypicStochasticity ?
 # The following line only matters if PhenotypicStochasticity is set to true
 const OnePhenNoiseTraitPerTrait = true # Should each trait have its own Phenotypic Noise ?
 
 # Mutation rate for each trait
-const MuHost_trait_alleles = [0.01 for sp in 1:NhostSp] # one mutation rate per species
-const MuParasit_trait_alleles = 0.01 # mutation rate
+const MuHost_trait_alleles = [0.02 for sp in 1:NhostSp] # one mutation rate per species
+const MuParasit_trait_alleles = 0.05 # mutation rate
 const MuEffectHost = const MuEffectParasites = 0.5 # Average proportion of the range of alleles values covered by only one mutation
 if GfG
     const MuHost_trait_presence = [0.001 for sp in 1:NhostSp] # one mutation rate per species
@@ -115,7 +121,7 @@ if GfG
 end
 # For each species, probability that an individual migrate (for simplicity we assum that individuals can migrate to there own population - with a probability that depend on carrying capacities)
 # No population structure corresponds to MigrRate = 1.0
-MigrRate = [0.0, 0.0]
+MigrRate = [0.0 for sp in 1:NhostSp]
 
 
 ## Simulation parameters
@@ -127,9 +133,9 @@ const MaxTimeToEquilibrium = 20000.0 # Float
 # Duration of the simulation once equilibrium as been reached (same unit as dt)
 const TimeAfterEquilibrium = 1000.0 # Float
 # AfterEquilibrium, at which frequency the state of the population should be recorded ?
-const RecordEvery = 5.0 # Float
+const RecordEvery = dt*10 # 5.0 # Float
 # Should only the dynamic after Equilibrium be kept ?
-OnlyRecordDynamicAfterEquilibrium = true
+OnlyRecordDynamicAfterEquilibrium = true # true
 
 # Number of repeatition of each simulation
 Nsimulations = 1
@@ -179,11 +185,44 @@ include("./4_RunSimulations.jl");
 # Explore the simulation (assuming Nsimulations == 1, otherwise you are only exploring the last simulation)
 X.Storage.EquilibriumAllPop[]
 
+X.Storage.Extinction
+
+
+Plot_Demography(X;ylog = false, Time=2:1000,scaleX=5.0,scaleY=0.75)
+Plot_traits_infection_success_FREQ_ALLELES(X,trait=1,scaleX=5.0,scaleY=0.75)
+Plot_traits_immunity_FREQ_ALLELES(X,trait=1,scaleX=5.0,scaleY=0.75)
+
+
 plot( X.Storage.Recorded.HostsTraits_infection_success_freq[1][1][1][1][2:end],trait=1)
 plot!(X.Storage.Recorded.ParasTraits_infection_success_freq[1][1][1][1][2:end],trait=1)
 
 plot( X.Storage.Recorded.HostsTraits_immunity_freq[1][1][1][1][2:end],trait=1)
 plot!(X.Storage.Recorded.ParasTraits_immunity_freq[1][1][1][1][2:end],trait=1)
+
+### store Alleles frequecies
+File = "./Alleles_frequecies.csv" ,
+open(File, truncate =true) do f,
+    write(f, join(,
+            ["Nhosts",
+             "FreqImmH".* string.(1:NallelesPerTrait)...,
+             "FreqInfH".* string.(1:NallelesPerTrait)...,
+             "Nparasits",
+             "FreqImmP".* string.(1:NallelesPerTrait)...,
+             "FreqInfP".* string.(1:NallelesPerTrait)...,
+            ],
+            ,";"))
+    
+     for i in 1:length(X.Storage.Recorded.Hosts[1][1])    ,
+        write(f, *join( [ X.Storage.Recorded.Hosts[1][1][i],
+                            ,[X.Storage.Recorded.HostsTraits_immunity_freq[1         ][1][1][allele][i] for allele in 1:NallelesPerTrait]...,
+                            ,[X.Storage.Recorded.HostsTraits_infection_success_freq[1][1][1][allele][i] for allele in 1:NallelesPerTrait]...,
+                            , X.Storage.Recorded.Parasites[1][1][i],
+                            ,[X.Storage.Recorded.ParasTraits_immunity_freq[         1][1][1][allele][i] for allele in 1:NallelesPerTrait]...,
+                            ,[X.Storage.Recorded.ParasTraits_infection_success_freq[1][1][1][allele][i] for allele in 1:NallelesPerTrait]...,
+                ]
+            ,";" ) )
+     end
+end
 
 
 Plot_He(X;ylog = false)
